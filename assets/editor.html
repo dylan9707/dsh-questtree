@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>任务树</title>
+<style>
+  :root {
+    --qt-bg: #0b1d33;
+    --qt-bg2: #10263f;
+    --qt-line: #2a3d54;
+    --qt-line-strong: #3d5370;
+    --qt-text: #e6edf3;
+    --qt-text2: #9fb3c8;
+    --qt-text3: #62758a;
+    --qt-accent: #4d9fff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--qt-bg);
+    color: var(--qt-text);
+    font: 13px/1.5 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #main-head { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; flex: none; }
+  .head-title { color: var(--qt-text); font-size: 13px; font-weight: 600; }
+  .head-stats { color: var(--qt-text3); font-size: 11px; margin-left: auto; }
+  #crumb { display: flex; align-items: center; gap: 4px; padding: 5px 12px; border-bottom: 1px solid var(--qt-line); font-size: 11px; color: var(--qt-text2); overflow-x: auto; white-space: nowrap; flex: none; }
+  .crumb-seg { flex: none; }
+  .crumb-seg.cur { color: var(--qt-accent); font-weight: 600; }
+  .crumb-sep { color: var(--qt-text3); flex: none; }
+  #tree { flex: 1; overflow: auto; padding: 6px 0; }
+  .node-row { display: flex; align-items: center; gap: 6px; padding: 4px 12px; min-height: 28px; }
+  .node-row.here { background: color-mix(in srgb, var(--qt-accent) 14%, transparent); box-shadow: inset 2px 0 0 var(--qt-accent); }
+  .node-exp { width: 14px; flex: none; color: var(--qt-text3); cursor: pointer; text-align: center; user-select: none; }
+  .node-exp.empty { visibility: hidden; }
+  .badge { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 18px; flex: none; }
+  .st-todo { --st: #62758a; }
+  .st-in_progress { --st: #4d9fff; }
+  .st-closed { --st: #3fb950; }
+  .st-decided { --st: #d29922; }
+  .st-pending_decision { --st: #a371f7; }
+  .st-blocked { --st: #f85149; }
+  .badge { color: var(--st); border: 1px solid color-mix(in srgb, var(--st) 40%, transparent); background: color-mix(in srgb, var(--st) 12%, transparent); }
+  .node-title { color: var(--qt-text); cursor: pointer; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .node-title:hover { text-decoration: underline; }
+  .node-progress { color: var(--qt-text3); font-size: 11px; flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .here-pill { background: var(--qt-accent); color: #fff; font-size: 10px; font-weight: 700; padding: 0 6px; border-radius: 999px; flex: none; line-height: 16px; }
+  .empty { padding: 28px 16px; color: var(--qt-text3); text-align: center; font-size: 12px; }
+  #note { border-top: 1px solid var(--qt-line); background: var(--qt-bg2); flex: none; max-height: 46%; display: flex; flex-direction: column; }
+  #note[hidden] { display: none; }
+  #note-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; flex: none; }
+  #note-title { color: var(--qt-text); font-weight: 600; font-size: 13px; }
+  #note-close { border: none; background: transparent; color: var(--qt-text2); font-size: 16px; cursor: pointer; padding: 0 4px; }
+  #note-close:hover { color: var(--qt-text); }
+  #note-meta { padding: 0 12px 6px; color: var(--qt-text3); font-size: 11px; }
+  #note-body { padding: 0 12px 12px; overflow: auto; color: var(--qt-text); font-size: 12.5px; }
+  #note-body h1, #note-body h2, #note-body h3, #note-body h4 { font-size: 13px; margin: 10px 0 4px; }
+  #note-body p { margin: 4px 0; }
+  #note-body ul, #note-body ol { margin: 4px 0; padding-left: 18px; }
+  #note-body code { background: var(--qt-line); padding: 1px 4px; border-radius: 4px; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+  #note-body pre { background: var(--qt-line); padding: 8px; border-radius: 6px; overflow: auto; }
+  #note-body pre code { background: transparent; padding: 0; }
+  #note-body a { color: var(--qt-accent); }
+  .muted { color: var(--qt-text3); }
+</style>
+</head>
+<body>
+  <div id="main-head"></div>
+  <div id="crumb"></div>
+  <div id="tree"></div>
+  <div id="note" hidden>
+    <div id="note-head">
+      <span id="note-title"></span>
+      <button id="note-close" aria-label="关闭备注">×</button>
+    </div>
+    <div id="note-meta"></div>
+    <div id="note-body"></div>
+  </div>
+<script>
+(function () {
+  'use strict';
+  var STATUS_LABEL = { todo: '待办', in_progress: '进行中', closed: '已闭', decided: '已拍·未实施', pending_decision: '待拍', blocked: '阻塞' };
+  var treeData = null;
+  var expanded = new Set();
+  var initialized = false;
+  var inFlight = false;
+  var lastJson = '';
+
+  function syncTheme() {
+    var map = {
+      '--qt-bg': '--dsw-alias-bg-module-platform',
+      '--qt-bg2': '--dsw-alias-bg-module',
+      '--qt-line': '--dsw-alias-line-normal',
+      '--qt-line-strong': '--dsw-alias-line-strong',
+      '--qt-text': '--dsw-alias-label-primary',
+      '--qt-text2': '--dsw-alias-label-secondary',
+      '--qt-text3': '--dsw-alias-label-tertiary',
+      '--qt-accent': '--dsw-alias-state-business-primary'
+    };
+    try {
+      var cs = window.parent.getComputedStyle(window.parent.document.documentElement);
+      var root = document.documentElement;
+      for (var k in map) {
+        var v = cs.getPropertyValue(map[k]).trim();
+        if (v) root.style.setProperty(k, v);
+      }
+    } catch (e) {}
+  }
+
+  function naturalCompare(a, b) {
+    return String(a).localeCompare(String(b), 'en', { numeric: true, sensitivity: 'base' });
+  }
+
+  function childrenOf(nodes, id) {
+    return nodes.filter(function (n) { return n.parentId === id; })
+      .sort(function (a, b) { return naturalCompare(a.id, b.id); });
+  }
+
+  function findNode(nodes, id) {
+    for (var i = 0; i < nodes.length; i++) if (nodes[i].id === id) return nodes[i];
+    return null;
+  }
+
+  function pathToCurrent(data) {
+    var path = [];
+    var cur = findNode(data.nodes, data.currentNodeId);
+    var seen = {};
+    while (cur && !seen[cur.id]) {
+      seen[cur.id] = true;
+      path.unshift(cur);
+      cur = findNode(data.nodes, cur.parentId);
+    }
+    return path;
+  }
+
+  function initializeExpanded(data) {
+    if (initialized) return;
+    initialized = true;
+    var root = null;
+    for (var i = 0; i < data.nodes.length; i++) if (data.nodes[i].parentId === null) root = data.nodes[i];
+    if (root) {
+      expanded.add(root.id);
+      var l1 = childrenOf(data.nodes, root.id);
+      for (var j = 0; j < l1.length; j++) expanded.add(l1[j].id);
+    }
+    var path = pathToCurrent(data);
+    for (var k = 0; k < path.length; k++) {
+      if (childrenOf(data.nodes, path[k].id).length) expanded.add(path[k].id);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function inlineMd(s) {
+    var e = escapeHtml(s);
+    e = e.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
+    e = e.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    e = e.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    e = e.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return e;
+  }
+
+  function mdToHtml(md) {
+    if (!md) return '';
+    var lines = String(md).replace(/\r\n?/g, '\n').split('\n');
+    var out = [];
+    var inCode = false;
+    var codeBuf = [];
+    var list = [];
+    function flushList() {
+      if (list.length) {
+        out.push('<ul>' + list.map(function (li) { return '<li>' + li + '</li>'; }).join('') + '</ul>');
+        list = [];
+      }
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (/^\`\`\`/.test(line)) {
+        flushList();
+        if (inCode) { out.push('<pre><code>' + escapeHtml(codeBuf.join('\n')) + '</code></pre>'); codeBuf = []; inCode = false; }
+        else { inCode = true; }
+        continue;
+      }
+      if (inCode) { codeBuf.push(line); continue; }
+      if (/^\s*$/.test(line)) { flushList(); continue; }
+      if (/^#{1,6}\s/.test(line)) {
+        flushList();
+        var m = line.match(/^(#{1,6})\s+(.*)$/);
+        var level = m[1].length;
+        out.push('<h' + level + '>' + inlineMd(m[2]) + '</h' + level + '>');
+      } else if (/^\s*[-*+]\s+/.test(line)) {
+        list.push(inlineMd(line.replace(/^\s*[-*+]\s+/, '')));
+      } else if (/^\s*\d+\.\s+/.test(line)) {
+        list.push(inlineMd(line.replace(/^\s*\d+\.\s+/, '')));
+      } else {
+        flushList();
+        out.push('<p>' + inlineMd(line) + '</p>');
+      }
+    }
+    flushList();
+    if (inCode) out.push('<pre><code>' + escapeHtml(codeBuf.join('\n')) + '</code></pre>');
+    return out.join('');
+  }
+
+  function buildNode(node, data, depth) {
+    var kids = childrenOf(data.nodes, node.id);
+    var isOpen = expanded.has(node.id);
+    var wrap = document.createElement('div');
+    var row = document.createElement('div');
+    row.className = 'node-row' + (node.id === data.currentNodeId ? ' here' : '');
+    row.style.paddingLeft = (8 + depth * 16) + 'px';
+
+    var exp = document.createElement('span');
+    exp.className = 'node-exp' + (kids.length ? '' : ' empty');
+    if (kids.length) {
+      exp.textContent = isOpen ? '▾' : '▸';
+      (function (nid) {
+        exp.addEventListener('click', function () { toggle(nid); });
+      })(node.id);
+    }
+    row.appendChild(exp);
+
+    var badge = document.createElement('span');
+    badge.className = 'badge st-' + node.status;
+    badge.textContent = STATUS_LABEL[node.status] || node.status;
+    row.appendChild(badge);
+
+    var t = document.createElement('span');
+    t.className = 'node-title';
+    t.textContent = node.title || node.id;
+    t.title = '点击查看备注';
+    (function (n) {
+      t.addEventListener('click', function () { openNote(n); });
+    })(node);
+    row.appendChild(t);
+
+    if (node.id === data.currentNodeId) {
+      var here = document.createElement('span');
+      here.className = 'here-pill';
+      here.textContent = '你在这';
+      row.appendChild(here);
+    }
+    if (node.progress) {
+      var prog = document.createElement('span');
+      prog.className = 'node-progress';
+      prog.textContent = node.progress;
+      row.appendChild(prog);
+    }
+    wrap.appendChild(row);
+
+    if (kids.length && isOpen) {
+      var kidsWrap = document.createElement('div');
+      for (var i = 0; i < kids.length; i++) {
+        kidsWrap.appendChild(buildNode(kids[i], data, depth + 1));
+      }
+      wrap.appendChild(kidsWrap);
+    }
+    return wrap;
+  }
+
+  function toggle(id) {
+    if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+    render();
+  }
+
+  function openNote(node) {
+    var note = document.getElementById('note');
+    document.getElementById('note-title').textContent = node.title || node.id;
+    document.getElementById('note-meta').textContent =
+      (STATUS_LABEL[node.status] || node.status) +
+      (node.progress ? ' · ' + node.progress : '') +
+      ' · ' + node.id;
+    var body = document.getElementById('note-body');
+    var html = mdToHtml(node.note);
+    body.innerHTML = html ? html : '<span class="muted">无备注</span>';
+    note.hidden = false;
+  }
+
+  function render() {
+    var head = document.getElementById('main-head');
+    var crumb = document.getElementById('crumb');
+    var tree = document.getElementById('tree');
+    var scrollTop = tree.scrollTop;
+    head.innerHTML = '';
+    crumb.innerHTML = '';
+    tree.innerHTML = '';
+
+    var data = treeData;
+    if (!data || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+      var title = document.createElement('span');
+      title.className = 'head-title';
+      title.textContent = '任务树';
+      head.appendChild(title);
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = '暂无任务树 —— 让 agent 用 quest_tree_create 建一棵';
+      tree.appendChild(empty);
+      return;
+    }
+
+    var root = findNode(data.nodes, null) || null;
+    var htitle = document.createElement('span');
+    htitle.className = 'head-title';
+    htitle.textContent = data.name || '任务树';
+    head.appendChild(htitle);
+    var closed = 0;
+    for (var i = 0; i < data.nodes.length; i++) if (data.nodes[i].status === 'closed') closed++;
+    var stats = document.createElement('span');
+    stats.className = 'head-stats';
+    stats.textContent = '已闭 ' + closed + '/' + data.nodes.length;
+    head.appendChild(stats);
+
+    var path = pathToCurrent(data);
+    for (var j = 0; j < path.length; j++) {
+      var seg = document.createElement('span');
+      seg.className = 'crumb-seg' + (j === path.length - 1 ? ' cur' : '');
+      seg.textContent = path[j].title || path[j].id;
+      crumb.appendChild(seg);
+      if (j < path.length - 1) {
+        var sep = document.createElement('span');
+        sep.className = 'crumb-sep';
+        sep.textContent = '/';
+        crumb.appendChild(sep);
+      }
+    }
+
+    if (root) {
+      tree.appendChild(buildNode(root, data, 0));
+    }
+    tree.scrollTop = scrollTop;
+  }
+
+  function tick() {
+    if (inFlight) return;
+    inFlight = true;
+    fetch('/plugins/quest-tree/state', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+      .then(function (body) {
+        treeData = body && Array.isArray(body.nodes) ? body : null;
+        var j = JSON.stringify(treeData);
+        if (j === lastJson) return;
+        lastJson = j;
+        initializeExpanded(treeData);
+        render();
+      })
+      .catch(function () {})
+      .then(function () { inFlight = false; });
+  }
+
+  document.getElementById('note-close').addEventListener('click', function () {
+    document.getElementById('note').hidden = true;
+  });
+
+  syncTheme();
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
