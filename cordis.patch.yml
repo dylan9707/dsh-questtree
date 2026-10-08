@@ -7,7 +7,7 @@
 # Install: `dsh plugin --profile <name> add <path to this package>`
 - insert:
     - id: quest-tree
-      name: '@infmed/dsh-quest-tree'
+      name: 'dsh-questtree'
       config:
         # Quest tree state lives at <workspace>/<stateDir>/<stateFile>.
         stateDir: .quest-tree
