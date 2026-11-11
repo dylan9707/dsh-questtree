@@ -88,7 +88,12 @@
   var inFlight = false;
   var lastJson = '';
   var sessionId = '';
-  try { sessionId = new URLSearchParams(window.location.search).get('session') || ''; } catch (e) {}
+  var cwd = '';
+  try {
+    var pageQuery = new URLSearchParams(window.location.search);
+    sessionId = pageQuery.get('session') || '';
+    cwd = pageQuery.get('cwd') || '';
+  } catch (e) {}
 
   function syncTheme() {
     var map = {
@@ -304,7 +309,10 @@
       return;
     }
 
-    var root = findNode(data.nodes, null) || null;
+    var root = null;
+    for (var ri = 0; ri < data.nodes.length; ri++) {
+      if (data.nodes[ri].parentId === null) { root = data.nodes[ri]; break; }
+    }
     var htitle = document.createElement('span');
     htitle.className = 'head-title';
     htitle.textContent = data.name || '任务树';
@@ -339,7 +347,10 @@
   function tick() {
     if (inFlight) return;
     inFlight = true;
-    var url = '/plugins/quest-tree/state' + (sessionId ? '?session=' + encodeURIComponent(sessionId) : '');
+    var query = [];
+    if (sessionId) query.push('session=' + encodeURIComponent(sessionId));
+    if (cwd) query.push('cwd=' + encodeURIComponent(cwd));
+    var url = '/plugins/quest-tree/state' + (query.length ? '?' + query.join('&') : '');
     fetch(url, { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
       .then(function (body) {
@@ -347,7 +358,7 @@
         var j = JSON.stringify(treeData);
         if (j === lastJson) return;
         lastJson = j;
-        initializeExpanded(treeData);
+        if (treeData) initializeExpanded(treeData);
         render();
       })
       .catch(function () {})

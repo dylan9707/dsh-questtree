@@ -48,6 +48,7 @@ agent 会 `quest_tree_create` 建主线、`quest_tree_create_node` 拆分支，�
 ## 数据存储
 
 - 任务树状态按会话隔离：`<workspace>/.quest-tree/sessions/<sessionId>.json`（`{ version, name, description, sessionId, currentNodeId, nodeSeq, nodes[] }`）。
+- 面板按会话自己的工作区（会话 cwd）读取：切到哪个会话就找那个会话工作区下的文件；该会话还没有树时显示「暂无任务树」提示。
 - 旧版单文件 `<workspace>/.quest-tree/quest.json` 只用于兼容：里面记录的 `sessionId` 与当前会话一致时，首次打开（或首次写入）会自动沿用并迁移到该会话自己的文件。
 - 一个会话同一时间只维护一棵树；`overwrite: true` 才能覆盖现有树。
 

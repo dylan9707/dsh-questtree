@@ -1,6 +1,6 @@
 {
   "name": "dsh-questtree",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Quest tree for DeepSeek Harness: track a long-running task as a main quest + branch tree, with a sidebar panel showing status/progress/markdown notes and a 'you are here' marker to prevent drift.",
   "keywords": [
     "dsh",
