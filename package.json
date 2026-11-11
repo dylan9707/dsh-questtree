@@ -1,9 +1,21 @@
 {
   "name": "dsh-questtree",
   "version": "0.1.0",
-  "description": "Quest tree for DeepSeek Harness: track a long-running task as a main quest + branch tree, with a floating panel showing status/progress/markdown notes and a 'you are here' marker to prevent drift.",
+  "description": "Quest tree for DeepSeek Harness: track a long-running task as a main quest + branch tree, with a sidebar panel showing status/progress/markdown notes and a 'you are here' marker to prevent drift.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "quest-tree",
+    "task-tracking",
+    "task-management",
+    "todo",
+    "ai-agent",
+    "llm"
+  ],
   "type": "module",
   "main": "lib/index.js",
+  "icon": "./icon.svg",
   "exports": {
     ".": {
       "default": "./lib/index.js"
@@ -12,14 +24,42 @@
       "default": "./lib/client.js"
     },
     "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
   },
   "files": [
     "lib",
     "assets",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
   ],
   "license": "MIT",
+  "author": {
+    "name": "dylan9707",
+    "url": "https://github.com/dylan9707"
+  },
+  "homepage": "https://github.com/dylan9707/dsh-questtree#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dylan9707/dsh-questtree.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dylan9707/dsh-questtree/issues"
+  },
+  "engines": {
+    "node": ">=18",
+    "dsh": ">=0.2.0-rc.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "check": "node --input-type=module -e \"import('./lib/index.js').then(m => console.log('OK: ' + Object.keys(m).join(', ')))\""
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -29,12 +69,13 @@
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-conversation"
       ],
-      "platform": "web"
+      "platform": "web",
+      "immediately": true
     }
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
-    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
     "@deepseek-ai/schemastery": "^3.18.2"
   },
   "peerDependenciesMeta": {
@@ -44,7 +85,7 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
-    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
     "@deepseek-ai/schemastery": "^3.18.2"
   }
 }

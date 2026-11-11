@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Quest tree",
+    "description": "Tracks a long-running task as a main quest plus a branch tree, with status, progress, markdown notes, and a you-are-here marker to prevent drift."
+  }
+}

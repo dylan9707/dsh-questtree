@@ -90,14 +90,14 @@
 
   function syncTheme() {
     var map = {
-      '--qt-bg': '--dsw-alias-bg-module-platform',
-      '--qt-bg2': '--dsw-alias-bg-module',
-      '--qt-line': '--dsw-alias-line-normal',
-      '--qt-line-strong': '--dsw-alias-line-strong',
+      '--qt-bg': '--dsw-alias-bg-base',
+      '--qt-bg2': '--dsw-alias-bg-layer-1',
+      '--qt-line': '--dsw-alias-border-l1',
+      '--qt-line-strong': '--dsw-alias-border-l2',
       '--qt-text': '--dsw-alias-label-primary',
       '--qt-text2': '--dsw-alias-label-secondary',
-      '--qt-text3': '--dsw-alias-label-tertiary',
-      '--qt-accent': '--dsw-alias-state-business-primary'
+      '--qt-text3': '--dsw-alias-label-secondary',
+      '--qt-accent': '--dsw-alias-brand-primary'
     };
     try {
       var cs = window.parent.getComputedStyle(window.parent.document.documentElement);

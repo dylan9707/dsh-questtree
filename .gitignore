@@ -1,1 +1,9 @@
 node_modules/
+
+# Workspace state produced by the plugin (and other workspace-local plugins)
+.quest-tree/
+ai_notes/
+
+# Logs
+*.log
+npm-debug.log*
