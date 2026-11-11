@@ -1,6 +1,6 @@
 {
   "name": "dsh-questtree",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Quest tree for DeepSeek Harness: track a long-running task as a main quest + branch tree, with a sidebar panel showing status/progress/markdown notes and a 'you are here' marker to prevent drift.",
   "keywords": [
     "dsh",
@@ -52,7 +52,7 @@
   },
   "engines": {
     "node": ">=18",
-    "dsh": ">=0.2.0-rc.2"
+    "dsh": ">=0.2.2-rc.1"
   },
   "publishConfig": {
     "access": "public"
@@ -67,7 +67,8 @@
     "client": {
       "inject": [
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-conversation"
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar-right"
       ],
       "platform": "web",
       "immediately": true
@@ -76,16 +77,19 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
     "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "0.2.2-rc.1",
     "@deepseek-ai/schemastery": "^3.18.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": { "optional": true },
     "@deepseek-ai/dsh-tools": { "optional": true },
+    "@deepseek-ai/dsh-client-ui-sidebar-right": { "optional": true },
     "@deepseek-ai/schemastery": { "optional": true }
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
     "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "0.2.2-rc.1",
     "@deepseek-ai/schemastery": "^3.18.2"
   }
 }

@@ -87,6 +87,8 @@
   var initialized = false;
   var inFlight = false;
   var lastJson = '';
+  var sessionId = '';
+  try { sessionId = new URLSearchParams(window.location.search).get('session') || ''; } catch (e) {}
 
   function syncTheme() {
     var map = {
@@ -337,7 +339,8 @@
   function tick() {
     if (inFlight) return;
     inFlight = true;
-    fetch('/plugins/quest-tree/state', { cache: 'no-store' })
+    var url = '/plugins/quest-tree/state' + (sessionId ? '?session=' + encodeURIComponent(sessionId) : '');
+    fetch(url, { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
       .then(function (body) {
         treeData = body && Array.isArray(body.nodes) ? body : null;
