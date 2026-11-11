@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "任务树",
-    "description": "把长任务维护成一条主线加分支树，展示状态、进度、markdown 备注与「你在这」标记，防止跑偏。"
+    "description": "把长任务维护成一条主线加分支树：每个 task 下的决策问题就是 interview 清单，节点内联展示决策记录与实施 preview。"
   }
 }

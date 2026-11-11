@@ -23,7 +23,7 @@
     font: 13px/1.5 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
     display: flex; flex-direction: column; overflow: hidden;
   }
-  #main-head { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; flex: none; }
+  #main-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex: none; }
   .head-title { color: var(--qt-text); font-size: 13px; font-weight: 600; }
   .head-stats { color: var(--qt-text3); font-size: 11px; margin-left: auto; }
   #crumb { display: flex; align-items: center; gap: 4px; padding: 5px 12px; border-bottom: 1px solid var(--qt-line); font-size: 11px; color: var(--qt-text2); overflow-x: auto; white-space: nowrap; flex: none; }
@@ -40,6 +40,7 @@
   .st-in_progress { --st: #4d9fff; }
   .st-closed { --st: #3fb950; }
   .st-decided { --st: #d29922; }
+  .st-implemented { --st: #39c5cf; }
   .st-pending_decision { --st: #a371f7; }
   .st-blocked { --st: #f85149; }
   .badge { color: var(--st); border: 1px solid color-mix(in srgb, var(--st) 40%, transparent); background: color-mix(in srgb, var(--st) 12%, transparent); }
@@ -48,21 +49,26 @@
   .node-progress { color: var(--qt-text3); font-size: 11px; flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .here-pill { background: var(--qt-accent); color: #fff; font-size: 10px; font-weight: 700; padding: 0 6px; border-radius: 999px; flex: none; line-height: 16px; }
   .empty { padding: 28px 16px; color: var(--qt-text3); text-align: center; font-size: 12px; }
-  #note { border-top: 1px solid var(--qt-line); background: var(--qt-bg2); flex: none; max-height: 46%; display: flex; flex-direction: column; }
-  #note[hidden] { display: none; }
-  #note-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; flex: none; }
-  #note-title { color: var(--qt-text); font-weight: 600; font-size: 13px; }
-  #note-close { border: none; background: transparent; color: var(--qt-text2); font-size: 16px; cursor: pointer; padding: 0 4px; }
-  #note-close:hover { color: var(--qt-text); }
-  #note-meta { padding: 0 12px 6px; color: var(--qt-text3); font-size: 11px; }
-  #note-body { padding: 0 12px 12px; overflow: auto; color: var(--qt-text); font-size: 12.5px; }
-  #note-body h1, #note-body h2, #note-body h3, #note-body h4 { font-size: 13px; margin: 10px 0 4px; }
-  #note-body p { margin: 4px 0; }
-  #note-body ul, #note-body ol { margin: 4px 0; padding-left: 18px; }
-  #note-body code { background: var(--qt-line); padding: 1px 4px; border-radius: 4px; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
-  #note-body pre { background: var(--qt-line); padding: 8px; border-radius: 6px; overflow: auto; }
-  #note-body pre code { background: transparent; padding: 0; }
-  #note-body a { color: var(--qt-accent); }
+  .node-detail { margin: 0 12px 6px; border-left: 2px solid var(--qt-line-strong); padding: 6px 10px; background: var(--qt-bg2); border-radius: 0 6px 6px 0; }
+  .node-detail.st-decided { border-left-color: #d29922; }
+  .node-detail.st-implemented { border-left-color: #39c5cf; }
+  .node-detail.st-pending_decision { border-left-color: #a371f7; }
+  .dt-sec + .dt-sec { margin-top: 8px; }
+  .dt-h { color: var(--qt-text3); font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+  .dt-body { color: var(--qt-text); font-size: 12.5px; overflow: auto; max-height: 220px; }
+  .dt-body h1, .dt-body h2, .dt-body h3, .dt-body h4 { font-size: 13px; margin: 8px 0 4px; }
+  .dt-body p { margin: 4px 0; }
+  .dt-body ul, .dt-body ol { margin: 4px 0; padding-left: 18px; }
+  .dt-body code { background: var(--qt-line); padding: 1px 4px; border-radius: 4px; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+  .dt-body pre { background: var(--qt-line); padding: 8px; border-radius: 6px; overflow: auto; }
+  .dt-body pre code { background: transparent; padding: 0; }
+  .dt-body a { color: var(--qt-accent); }
+  .doc-pill { color: var(--qt-text3); border: 1px solid var(--qt-line); border-radius: 999px; font-size: 10px; line-height: 14px; padding: 0 5px; flex: none; }
+  .doc-pill.btn { cursor: pointer; color: var(--qt-text2); border-color: var(--qt-line-strong); }
+  .doc-pill.btn:hover { color: var(--qt-text); background: var(--qt-line); }
+  .doc-pill.btn.open { color: var(--qt-text); border-color: color-mix(in srgb, var(--st, #4d9fff) 55%, transparent); }
+  .head-btn { cursor: pointer; flex: none; color: var(--qt-text2); background: transparent; border: 1px solid var(--qt-line-strong); border-radius: 999px; font: inherit; font-size: 11px; line-height: 18px; padding: 0 9px; }
+  .head-btn:hover { color: var(--qt-text); background: var(--qt-line); }
   .muted { color: var(--qt-text3); }
 </style>
 </head>
@@ -70,20 +76,15 @@
   <div id="main-head"></div>
   <div id="crumb"></div>
   <div id="tree"></div>
-  <div id="note" hidden>
-    <div id="note-head">
-      <span id="note-title"></span>
-      <button id="note-close" aria-label="关闭备注">×</button>
-    </div>
-    <div id="note-meta"></div>
-    <div id="note-body"></div>
-  </div>
 <script>
 (function () {
   'use strict';
-  var STATUS_LABEL = { todo: '待办', in_progress: '进行中', closed: '已闭', decided: '已拍·未实施', pending_decision: '待拍', blocked: '阻塞' };
+  var STATUS_LABEL = { todo: '待办', in_progress: '进行中', closed: '已闭', decided: '已拍·未实施', implemented: '已拍·已实施', pending_decision: '待拍', blocked: '阻塞' };
   var treeData = null;
   var expanded = new Set();
+  // A node that already carries a decision or an implementation preview keeps its
+  // "small window" open under the row; folding it is per node and survives polling.
+  var detailCollapsed = new Set();
   var initialized = false;
   var inFlight = false;
   var lastJson = '';
@@ -239,11 +240,26 @@
     var t = document.createElement('span');
     t.className = 'node-title';
     t.textContent = node.title || node.id;
-    t.title = '点击查看备注';
+    t.title = detailIsOpen(node) ? '收起决策/实施记录' : '展开决策/实施记录';
     (function (n) {
-      t.addEventListener('click', function () { openNote(n); });
+      t.addEventListener('click', function () { toggleDetail(n.id); });
     })(node);
     row.appendChild(t);
+
+    if (hasDocs(node)) {
+      var openNow = detailIsOpen(node);
+      var labels = [];
+      if (node.decision) labels.push('决策');
+      if (node.implementation) labels.push('实施');
+      var pill = document.createElement('span');
+      pill.className = 'doc-pill btn' + (openNow ? ' open' : '');
+      pill.textContent = (openNow ? '▾ ' : '▸ ') + labels.join(' / ');
+      pill.title = openNow ? '收起决策 / 实施记录' : '展开决策 / 实施记录';
+      (function (n) {
+        pill.addEventListener('click', function (ev) { ev.stopPropagation(); toggleDetail(n.id); });
+      })(node);
+      row.appendChild(pill);
+    }
 
     if (node.id === data.currentNodeId) {
       var here = document.createElement('span');
@@ -258,6 +274,8 @@
       row.appendChild(prog);
     }
     wrap.appendChild(row);
+
+    if (detailIsOpen(node)) wrap.appendChild(buildDetail(node));
 
     if (kids.length && isOpen) {
       var kidsWrap = document.createElement('div');
@@ -274,17 +292,88 @@
     render();
   }
 
-  function openNote(node) {
-    var note = document.getElementById('note');
-    document.getElementById('note-title').textContent = node.title || node.id;
-    document.getElementById('note-meta').textContent =
-      (STATUS_LABEL[node.status] || node.status) +
-      (node.progress ? ' · ' + node.progress : '') +
-      ' · ' + node.id;
-    var body = document.getElementById('note-body');
-    var html = mdToHtml(node.note);
-    body.innerHTML = html ? html : '<span class="muted">无备注</span>';
-    note.hidden = false;
+  // A node with a decision or implementation preview starts unfolded; folding one
+  // node must not be undone by the next poll, so the folded set is kept in memory.
+  function hasDocs(node) { return !!(node.decision || node.implementation); }
+
+  function detailIsOpen(node) { return hasDocs(node) && !detailCollapsed.has(node.id); }
+
+  function anyDocOpen(data) {
+    for (var i = 0; i < data.nodes.length; i++) if (detailIsOpen(data.nodes[i])) return true;
+    return false;
+  }
+
+  // A branch below the root that is currently unfolding children.
+  function anyBranchOpen(data) {
+    for (var i = 0; i < data.nodes.length; i++) {
+      var n = data.nodes[i];
+      if (n.parentId === null) continue;
+      if (expanded.has(n.id) && childrenOf(data.nodes, n.id).length) return true;
+    }
+    return false;
+  }
+
+  // One gesture for a long interview: close every decision window and collapse every
+  // branch below the root, so the panel drops back to the ten top-level rows.
+  function foldAll(data) {
+    var root = null;
+    for (var i = 0; i < data.nodes.length; i++) {
+      detailCollapsed.add(data.nodes[i].id);
+      if (data.nodes[i].parentId === null) root = data.nodes[i];
+    }
+    expanded.clear();
+    if (root) expanded.add(root.id);
+    render();
+  }
+
+  function expandAll(data) {
+    detailCollapsed.clear();
+    expanded.clear();
+    for (var i = 0; i < data.nodes.length; i++) {
+      var n = data.nodes[i];
+      if (childrenOf(data.nodes, n.id).length) expanded.add(n.id);
+    }
+    render();
+  }
+
+  function toggleDetail(id) {
+    if (detailCollapsed.has(id)) detailCollapsed.delete(id); else detailCollapsed.add(id);
+    render();
+  }
+
+  // Inline "small window" under a question row: what was decided, and — once the
+  // code exists — the implementation preview that goes with it.
+  function buildDetail(node) {
+    var card = document.createElement('div');
+    card.className = 'node-detail st-' + node.status;
+    var secs = [
+      { head: '决策', text: node.decision },
+      { head: '实施 preview', text: node.implementation },
+      { head: '备注', text: node.note }
+    ];
+    var shown = 0;
+    for (var i = 0; i < secs.length; i++) {
+      if (!secs[i].text) continue;
+      shown++;
+      var sec = document.createElement('div');
+      sec.className = 'dt-sec';
+      var h = document.createElement('div');
+      h.className = 'dt-h';
+      h.textContent = secs[i].head;
+      var body = document.createElement('div');
+      body.className = 'dt-body';
+      body.innerHTML = mdToHtml(secs[i].text);
+      sec.appendChild(h);
+      sec.appendChild(body);
+      card.appendChild(sec);
+    }
+    if (!shown) {
+      var empty = document.createElement('div');
+      empty.className = 'muted';
+      empty.textContent = '尚无记录 —— 拍板后写决策，实施后补实施 preview';
+      card.appendChild(empty);
+    }
+    return card;
   }
 
   function render() {
@@ -317,11 +406,32 @@
     htitle.className = 'head-title';
     htitle.textContent = data.name || '任务树';
     head.appendChild(htitle);
-    var closed = 0;
-    for (var i = 0; i < data.nodes.length; i++) if (data.nodes[i].status === 'closed') closed++;
+
+    // Fold / unfold everything at once: decision windows and branches move together,
+    // so "全部折叠" always leaves the same overview state.
+    var canFold = anyDocOpen(data) || anyBranchOpen(data);
+    var foldBtn = document.createElement('button');
+    foldBtn.className = 'head-btn';
+    foldBtn.textContent = canFold ? '全部折叠' : '全部展开';
+    foldBtn.title = canFold ? '收起所有决策小窗与下级分支，只留顶层' : '展开所有分支与决策小窗';
+    foldBtn.addEventListener('click', function () {
+      if (canFold) foldAll(data); else expandAll(data);
+    });
+    head.appendChild(foldBtn);
+    // Interview progress at a glance: how many questions still wait for a ruling,
+    // how many are ruled but unbuilt, how many are built, how many are accepted.
+    var counts = { pending_decision: 0, decided: 0, implemented: 0, closed: 0 };
+    for (var i = 0; i < data.nodes.length; i++) {
+      var st = data.nodes[i].status;
+      if (counts[st] !== undefined) counts[st]++;
+    }
+    var parts = ['待拍 ' + counts.pending_decision];
+    if (counts.decided) parts.push('已拍未实施 ' + counts.decided);
+    if (counts.implemented) parts.push('已拍已实施 ' + counts.implemented);
+    parts.push('已闭 ' + counts.closed + '/' + data.nodes.length);
     var stats = document.createElement('span');
     stats.className = 'head-stats';
-    stats.textContent = '已闭 ' + closed + '/' + data.nodes.length;
+    stats.textContent = parts.join(' · ');
     head.appendChild(stats);
 
     var path = pathToCurrent(data);
@@ -364,10 +474,6 @@
       .catch(function () {})
       .then(function () { inFlight = false; });
   }
-
-  document.getElementById('note-close').addEventListener('click', function () {
-    document.getElementById('note').hidden = true;
-  });
 
   syncTheme();
   tick();

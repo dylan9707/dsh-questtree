@@ -9,6 +9,10 @@
     - id: quest-tree
       name: 'dsh-questtree'
       config:
-        # Quest tree state lives at <workspace>/<stateDir>/<stateFile>.
+        # Trees are keyed by session id under <stateRoot>/sessions/. Empty stateRoot
+        # means ~/.dsh/storages/dsh-questtree, so a tree follows its session instead of
+        # the working directory. stateDir/stateFile are only the pre-upgrade locations
+        # read for migration.
+        stateRoot: ''
         stateDir: .quest-tree
         stateFile: quest.json
