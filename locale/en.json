@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Quest Tree",
-    "description": "Keep a long task as a main quest plus branches: the decision questions under each task are the interview list, and each node shows its ruling and implementation preview inline."
+    "description": "Keep a long task as one project map — goal, milestones, acceptance items, evidence and the next step — with tree / board / brief views and clickable file:line links."
   }
 }

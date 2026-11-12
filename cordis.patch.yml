@@ -1,18 +1,18 @@
 # quest-tree bundle patch: mounts the quest-tree plugin into the host
 # composition of a dsh profile. The plugin registers its `quest_tree_*` tools
 # into the shared `tools` registry and one usage section into the global
-# system prompt, so every session of the profile can maintain a quest tree
-# (main quest + branches) through natural language.
+# system prompt, so every session of the profile shares one project tree per
+# workspace and keeps its own "you are here" overlay.
 #
 # Install: `dsh plugin --profile <name> add <path to this package>`
 - insert:
     - id: quest-tree
       name: 'dsh-questtree'
       config:
-        # Trees are keyed by session id under <stateRoot>/sessions/. Empty stateRoot
-        # means ~/.dsh/storages/dsh-questtree, so a tree follows its session instead of
-        # the working directory. stateDir/stateFile are only the pre-upgrade locations
-        # read for migration.
+        # One tree per workspace at <workspace>/.quest-tree/project.json, plus a
+        # per-session overlay under sessions/. Set stateRoot to keep project trees
+        # in a fixed directory instead. stateDir/stateFile are only the pre-upgrade
+        # locations read for migration.
         stateRoot: ''
         stateDir: .quest-tree
         stateFile: quest.json

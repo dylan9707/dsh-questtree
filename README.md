@@ -7,69 +7,93 @@
   <img src="https://img.shields.io/npm/v/dsh-questtree" alt="npm version">
 </p>
 
-> 任务树（Quest Tree）—— 把一个长任务维护成**一条主线 + 一棵分支树**，你和 agent 随时都能看到「当前做到哪、整条线还剩什么」。
+> 任务树（Quest Tree）—— 把一个长任务维护成一张**项目作战地图**：目标、里程碑、任务、验收项、证据，以及「下一步」。
 
-一个 DeepSeek Harness 插件。它在工作区里**为每个会话各维护一棵任务树**（主线根 + 分支节点），并把一组 `quest_tree_*` 工具注册进共享工具表、把一段使用说明注入全局系统提示，于是每个会话都能用自然语言维护自己的任务树，右侧边栏按当前会话实时展示，防止长任务跑偏。
+一个 DeepSeek Harness 插件。它给每个工作区维护**一棵共享的项目树**（同一 workspace 的所有会话看到同一张地图），每个会话只记录自己的「你在这」，并把一组 `quest_tree_*` 工具注册进共享工具表、把一段使用说明注入全局系统提示。右侧边栏是一个原生 React 面板：树 / 看板 / 一页简报三种视图，验收进度、证据缺口、阻塞与关键路径都在第一屏，实施记录里的文件可**直接点开跳到 `file:line`**。
 
 ## 能做什么
 
 | 能力 | 解决什么 |
 | --- | --- |
-| **主线 + 分支树** | 长任务拆成一棵有主线的树，进度一眼看全，不用翻聊天记录 |
-| **七档状态** | `todo` / `in_progress` / `closed` / `decided` / `implemented` / `pending_decision` / `blocked`，每档有中文标注 |
-| **决策驱动的 interview** | 每个 task 下挂一组决策问题（`pending_decision`），这份清单就是 interview 议程，按树序发问 |
-| **决策 / 实施 preview 内联展示** | 每个问题节点带 `decision`（拍板结论、理由、被否选项）与 `implementation`（改动文件与接口、行为、验证结果），在侧栏该行下方的小窗里默认展开；行内「▾ 决策 / 实施」标签可逐节点折叠，折叠状态在轮询刷新中保持 |
-| **「你在这」标记** | `set_current` 把当前聚焦分支钉住，agent 切换分支时重新指向 |
-| **Markdown 备注 + 进度** | 每个节点可写进度自由文本和 markdown 备注（问题背景、证据、权衡） |
-| **每个会话一棵树** | 会话之间互不干扰：切到哪个会话，右侧边栏就显示那个会话自己的任务树 |
-| **右侧边栏面板（Web GUI）** | 右侧边栏一个「任务树」标签页，实时看树、展开分支、查看 markdown 备注 |
-| **自动防跑题** | 系统提示让 agent 在会话跑偏时先 `quest_tree_read` 重新锚定 |
+| **项目级共享树** | 同一 workspace 一棵树；新会话打开即恢复「上次做到哪、缺什么证据」，不再每个会话各记各的 |
+| **验收契约** | 每个任务带 `doneWhen`（验收项）与 `verify`（验证命令），面板显示「验收 3/5」而不是自欺的百分比 |
+| **证据化完成** | `closed` 必须带证据覆盖全部验收项；`implemented` 只代表「代码写了、待验」 |
+| **加权进度 + 计数** | 进度按权重计算；顶部固定显示 待拍 / 进行中 / 待验 / 阻塞 / 已闭，报告不再只有「60%」 |
+| **下一步** | 从依赖就绪 + 祖先未闭的节点里算 ready 集合，面板底部固定「下一步」，agent 每轮先看它 |
+| **代码直链** | 节点 `files: [{path, line, endLine}]`，实施记录里的文件名直接打开侧栏文件并跳到对应行 |
+| **事件日志** | 状态迁移 append-only；返工（implemented/closed → decided）自动计数 |
+| **漂移哨兵 + 停靠区** | 临时支线用 `quest_tree_park` 停靠，不占 next 和进度；主线不被打断 |
+| **交接简报** | `quest_tree_handoff` 生成「目标 / 进度 / 当前分支 / 剩余验收 / 证据缺口 / 下一步 / 待拍问题」 |
+| **看板与简报** | 按状态分列的看板、可直接贴给用户或下个会话的一页 markdown 简报 |
 
 ## 工具
 
 | 工具 | 作用 |
 | --- | --- |
-| `quest_tree_create` | 新建任务树（先建主线根） |
-| `quest_tree_create_node` | 挂分支节点到指定父节点下（可自定义 id 或自动编号，可同时写 decision / implementation） |
-| `quest_tree_update_node` | 更新节点标题 / 状态 / 进度 / 备注 / 决策 / 实施 preview |
-| `quest_tree_set_current` | 把「你在这」标记移到指定节点 |
+| `quest_tree_create` | 新建项目树（主线根 + 目标） |
+| `quest_tree_plan` | 一次铺开整棵树：批量建分支，每个任务带 `doneWhen` / `verify` / `blockedBy` |
+| `quest_tree_create_node` | 追加一个分支节点（可自定义 id，如 `P1`、`P4.3`） |
+| `quest_tree_update_node` | 更新标题 / 状态 / 进度 / 备注 / 决策 / 实施 preview / 验收项 / 改动文件 / 链接 / 依赖 / 权重 / 停靠 |
+| `quest_tree_evidence` | 添加完成证据（测试 / 命令 / diff / 文件 / 评审 / 人工），`covers` 指定覆盖的验收项，`close: true` 覆盖齐全时自动关闭 |
+| `quest_tree_park` | 停靠一个临时想法 / 支线（parked，不占 next 与进度） |
+| `quest_tree_set_current` | 移动本会话的「你在这」标记（不影响其他会话） |
 | `quest_tree_move_node` | 把节点连同子树移到新父节点下 |
 | `quest_tree_delete_node` | 删除节点（子树一并删除；根不可删） |
-| `quest_tree_read` | 读取整棵树（主线 + 全部分支 + 状态 + 「你在这」） |
+| `quest_tree_read` | 读取整棵树 + 指标 + 下一步 + 阻塞 + 简报；每轮开工先读它定锚 |
+| `quest_tree_handoff` | 生成交接简报（markdown） |
 
 ## 用法
 
-在对话里直接说（自然语言）：
+在对话里直接说：
 
 ```
-把「重构登录重试」建成任务树，拆成几个分支
+把「重构登录重试」建成项目树，任务都带验收项，然后开始做
 ```
 
-agent 会 `quest_tree_create` 建主线、`quest_tree_create_node` 拆分支，边做边 `quest_tree_update_node` 更新状态，切换分支时 `quest_tree_set_current` 移动「你在这」标记。
+agent 会先用 `quest_tree_plan` 一次铺开（每个任务带 `doneWhen` / `verify`），边做边更新状态。
 
-### 用任务树做 interview
+### 完成一个任务
 
 ```
-task 1 重试策略
-  q1 重试次数上限怎么定？        [待拍]   note: 证据与权衡
-  q2 退避是固定还是指数？        [已拍·未实施]  decision: 选指数，理由…；被否：固定间隔
-  q3 失败如何上报？              [已拍·已实施]  decision: … implementation: 改了 x.js:12，验证命令与结果…
+quest_tree_update_node { node_id: "P2", status: "implemented",
+  files: [{ path: "src/login/retry.ts", line: 40, endLine: 88 }],
+  implementation: "改了 retry.ts:40-88；退避改指数；npm test 通过" }
+
+quest_tree_evidence { node_id: "P2", kind: "test", ref: "npm test -> 42 passed", covers: ["*"], close: true }
 ```
 
-1. 需求确认后先建树，把 task 拆成分支。
-2. 每个 task 下再拆出「写代码前必须定的决策」，每问一个节点，状态 `pending_decision`。
-3. 按树序访谈：`quest_tree_set_current` 指向当前问题，一次只问一个，证据和权衡写进 `note`。
-4. 用户拍板后把结论写进 `decision`，状态转 `decided`。
-5. 实施完成后把改动与验证结果写进 `implementation`，状态转 `implemented`；用户验收后再 `closed`。
-6. 侧栏里有决策或实施记录的节点在行下方默认展开「决策 / 实施 preview / 备注」小窗；点行内「▾ 决策 / 实施」标签或节点标题可折叠 / 展开，折叠状态在轮询刷新中保持。
+规则：
+
+- `implemented` 前至少要有 `files` 或 `links` 指向真实改动（`force: true` 可跳过，会记录 `forced`）。
+- `closed` 前每条 `doneWhen` 都要被证据覆盖；`covers` 可用验收项文本、序号或 `"*"`（全部）。
+- 没有验收项的节点，关闭时至少一条证据。
+- 同时最多 2 个 `in_progress`（含里程碑但根除外的任务节点）；超了会拒绝，先收尾或 `force`。
+
+### 漂移与停靠
+
+用户消息看起来像新支线时，先 `quest_tree_park` 停靠成 `parked` 的 idea 节点，再决定是否切换主线；停靠节点不进入 next、不计进度。
+
+## 面板
+
+右侧边栏一个「任务树」标签页（原生 React，非 iframe）：
+
+- **顶部**：目标、加权进度条、待拍 / 进行中 / 待验 / 阻塞 / 已闭 / 验收覆盖 / 返工计数。
+- **当前**：面包屑显示「你在这」。
+- **告警**：阻塞、待验收、缺验收证据、关键路径（解锁数最多的节点）。
+- **三种视图**：树（默认，支持搜索与折叠）、看板（按状态分列）、简报（markdown，可直接复制）。
+- **节点详情**（点标题展开）：决策 / 实施 preview / 验收 checklist（✓ 表示已有证据覆盖）/ 证据列表 / 改动文件 / 关联 / 依赖 / 备注。
+- **文件直链**：点详情里的文件名，侧栏打开该文件并跳到 `line`（通过 `sidebarRight.openResource` + `dsh-resource://file/...` 地址，与内置「代码审查」面板相同的导航）。
+- **你在这**：当前会话的节点高亮；其他会话移动自己的标记不影响你。
 
 ## 数据存储
 
-- 任务树按会话隔离，落在**与会话 cwd 无关**的固定位置：`<stateRoot>/sessions/<sessionId>.json`，默认 `~/.dsh/storages/dsh-questtree`（`{ version, name, description, sessionId, currentNodeId, nodeSeq, nodes[] }`）。
-- 为什么不放工作区：同一会话可能在不同 cwd 下重开，而侧栏面板与工具必须读写同一个文件；按 cwd 存会出现「工具写进 A、面板读 B」的空树。
-- 迁移：首次读写时若固定位置没有该会话的树，会依次沿用旧的 `<workspace>/.quest-tree/sessions/<sessionId>.json` 与 `<workspace>/.quest-tree/quest.json`（后者要求 `sessionId` 匹配），下次写入即迁到固定位置。
-- 面板只按会话 id 取树；该会话还没有树时显示「暂无任务树」提示。
-- 一个会话同一时间只维护一棵树；`overwrite: true` 才能覆盖现有树。
+- 一棵项目树：`<workspace>/.quest-tree/project.json`（`stateRoot` 配置可覆盖到固定目录）。
+- 每个会话的「你在这」：`<workspace>/.quest-tree/sessions/<sessionId>.json`（只存 `currentNodeId`）。
+- 树内节点记录验收项、证据、改动文件与事件日志；事件最多保留 400 条。
+- 迁移（只读，首次写入时迁走）：
+  - `~/.dsh/storages/dsh-questtree/sessions/<sessionId>.json`（0.3 的全局按会话树）
+  - `<workspace>/.quest-tree/sessions/<sessionId>.json`（0.2 的按工作区会话树）
+  - `<workspace>/.quest-tree/quest.json`（更早的单文件树，要求 `sessionId` 匹配）
 
 ## 安装
 
@@ -87,33 +111,40 @@ dsh plugin --profile <name> add <path-to-dsh-questtree>
 - id: quest-tree
   name: 'dsh-questtree'
   config:
-    stateRoot: ''           # 任务树存放根目录；空 = ~/.dsh/storages/dsh-questtree
-    stateDir: .quest-tree   # 仅旧的按工作区存放位置（迁移用）
-    stateFile: quest.json   # 仅旧的单文件位置（迁移用）
+    stateRoot: ''           # 项目树根目录；空 = <workspace>/.quest-tree
+    stateDir: .quest-tree   # 工作区内的目录名（也是迁移源）
+    stateFile: quest.json   # 旧单文件树名（迁移用）
+    promptSectionOrder: 118 # 使用说明在系统提示中的顺序
 ```
+
+## 指标口径
+
+- **进度**：已闭节点权重 / 全部未停靠节点权重（根节点参与权重）。
+- **验收覆盖**：被证据覆盖的 `doneWhen` 项 / 全部验收项。
+- **返工**：状态事件里 `implemented` 或 `closed` → `decided` 的次数。
+- **阻塞老化**：`blockedSince` 起算的天数。
+- **关键路径**：解锁节点数最多的前 6 个节点。
 
 ## 边界
 
-- 任务树是「进度 / 计划」的可见化，不是权威事实源——改代码仍以真实仓库为准。
-- `decision` / `implementation` 是给人看的记录，不替代设计记录或源码；两者冲突时以仓库为准。
+- 任务树是「计划 / 进度」的可见化，不是权威事实源；改代码仍以真实仓库为准。
+- `decision` / `implementation` 是给人看的记录，不替代设计记录或源码；冲突时以仓库为准。
 - `decided` 只表示拍板，`implemented` 只表示代码已写，都不代表用户验收；验收才 `closed`。
-- 状态存于 `<stateRoot>/sessions/` 下的会话文件，跨 DSH 进程不协调并发写（单进程内用锁 + 原子写保证一致）。
+- 跨 DSH 进程不协调并发写；单进程内用文件锁 + 原子写保证一致。
 - 根节点（主线）不能移动、不能删除。
 
 ## 开发
 
-改完验证 host 面：
-
 ```sh
-npm run check
+npm run check   # 加载 lib/index.js，打印 Config/apply/inject/name
 ```
 
 | 文件 | 作用 | 改完生效 |
 | --- | --- | --- |
-| `lib/index.js` | host：`quest_tree_*` 工具 + 系统提示 + 按会话读写 + 侧栏/编辑器路由 | 重启 `dsh web` |
-| `lib/client.js` | 右侧边栏标签页 + iframe 外壳（带当前会话 id） | 重启 `dsh web` |
-| `assets/editor.html` | 树编辑器 UI | 刷新面板即见 |
-| `locale/*.json` | 面板元信息（标题 / 描述）双语 | 重启生效 |
+| `lib/index.js` | host：11 个工具 + 系统提示 + 项目树/overlay 存储 + 状态路由 | 重启 dsh |
+| `lib/client.js` | 右侧边栏原生 React 面板（树/看板/简报、详情、文件直链） | 重启 dsh |
+| `assets/editor.html` | 早期 iframe 面板（保留 `/plugins/quest-tree/editor` 路由） | 刷新即见 |
+| `locale/*.json` | 插件元信息（标题 / 描述）双语 | 重启生效 |
 
 ## License
 

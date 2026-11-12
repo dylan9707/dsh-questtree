@@ -1,7 +1,7 @@
 {
   "name": "dsh-questtree",
-  "version": "0.3.0",
-  "description": "Quest tree for DeepSeek Harness: track a long-running task as a main quest + branch tree, break each task into decision questions, interview along that list, and record each ruling plus its implementation preview inline in the sidebar panel.",
+  "version": "1.0.0",
+  "description": "Quest tree for DeepSeek Harness: turn a long task into one project map — goal, milestones, acceptance items, evidence and the next step — with a native sidebar panel (tree / board / brief), per-session 'you are here', and clickable file:line links.",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -9,6 +9,9 @@
     "quest-tree",
     "task-tracking",
     "task-management",
+    "project-management",
+    "acceptance",
+    "evidence",
     "todo",
     "ai-agent",
     "llm"
